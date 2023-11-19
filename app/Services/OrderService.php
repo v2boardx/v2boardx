@@ -158,24 +158,44 @@ class OrderService
     {
         $plan = Plan::find($user->plan_id);
         if (!$plan) return;
-        if ($user->expired_at) $this->getSurplusValueByTime($user, $order, $plan);
+        // 如果套餐是按流量卖的，没有过期时间，则直接按照剩余流量残值计算
+        if ($user->expired_at === NULL) {
+            $this->getSurplusValueByTransfer($user, $order, $plan);
+            return;
+        }
+
+        // 如果套餐是按周期卖的，先计算剩余时间残值，然后加上剩余流量残值
+        $this->getSurplusValueByTime($user, $order, $plan);
         $this->getSurplusValueByTransfer($user, $order, $plan);
     }
 
     private function getSurplusValueByTime(User $user, Order $order, Plan $plan)
     {
         if (!$plan['daily_unit_price']) return;
-        $timeLeftDays = $user['expired_at'] - time() / 86400;
+
+        $timeLeftDays = ($user['expired_at'] - time()) / 86400;
+
         if (!$timeLeftDays) return;
-        $order->surplus_amount = $order->surplus_amount + ($timeLeftDays * $plan['daily_unit_price']);
+        // 如果套餐剩余时长小于 30 天，则不计算时间残值
+        if ($timeLeftDays < 30) return;
+
+        // 如果套餐剩余时长大于 30 天，则只计算整月，剩余部分是按剩余流量残值计算
+        $realTimeLeftDays = intval($timeLeftDays / 30) * 30;
+
+        $dailyUnitPrice = $plan['daily_unit_price'] / 100;
+        $order->surplus_amount = $order->surplus_amount + ($realTimeLeftDays * $dailyUnitPrice);
     }
 
     private function getSurplusValueByTransfer(User $user, Order $order, Plan $plan)
     {
         if (!$plan['transfer_unit_price']) return;
-        $transferLeft = ($user['transfer_enable'] - $user['u'] + $user['d']) / 1073741824;
+        $transferLeft = ($user['transfer_enable'] - ($user['u'] + $user['d'])) / 1073741824;
         if (!$transferLeft) return;
-        $order->surplus_amount = $order->surplus_amount + ($transferLeft * $plan['transfer_unit_price']);
+        // 如果套餐剩余流量为 0 或者负数，则不计算剩余流量残值
+        if ($transferLeft <= 0) return;
+
+        $transferUnitPrice = $plan['transfer_unit_price'] / 100;
+        $order->surplus_amount = $order->surplus_amount + ($transferLeft * $transferUnitPrice);
     }
 
     public function paid(string $callbackNo)
