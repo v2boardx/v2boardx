@@ -39,6 +39,9 @@ class Loon
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria2($user['uuid'], $item);
+            }
         }
         return $uri;
     }
@@ -126,6 +129,26 @@ class Loon
         ];
         if (!empty($server['allow_insecure'])) {
             array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria2($password, $server)
+    {
+        $config = [
+            "{$server['name']}=hysteria2",
+            "{$server['host']}",
+            "{$server['port']}",
+            "{$password}",
+            $server['server_name'] ? "tls-name={$server['server_name']}" : "",
+            'fast-open=false',
+            'udp-relay=true'
+        ];
+        if (!empty($server['insecure'])) {
+            array_push($config, $server['insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

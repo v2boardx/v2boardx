@@ -53,6 +53,12 @@ class Surge
                 // [Proxy Group]
                 $proxyGroup .= $item['name'] . ', ';
             }
+            if ($item['type'] === 'hysteria') {
+                // [Proxy]
+                $proxies .= self::buildHysteria2($user['uuid'], $item);
+                // [Proxy Group]
+                $proxyGroup .= $item['name'] . ', ';
+            }
         }
 
         $defaultConfig = base_path() . '/resources/rules/default.surge.conf';
@@ -153,6 +159,29 @@ class Surge
         ];
         if (!empty($server['allow_insecure'])) {
             array_push($config, $server['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        $config = array_filter($config);
+        $uri = implode(',', $config);
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria2($password, $server)
+    {
+        $config = [
+            "{$server['name']}=hysteria2",
+            "{$server['host']}",
+            "{$server['port']}",
+            "password={$password}",
+            $server['server_name'] ? "sni={$server['server_name']}" : "",
+            'tfo=false',
+            'udp-relay=true'
+        ];
+        if (!empty($server['insecure'])) {
+            array_push($config, $server['insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+        }
+        if (!$server['ignore_client_bandwidth']) {
+            array_push($config, 'download-bandwidth=' . $server['down_mbps']);
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

@@ -38,6 +38,9 @@ class Shadowrocket
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
+            if ($item['type'] === 'hysteria') {
+                $uri .= self::buildHysteria2($user['uuid'], $item);
+            }
         }
         return base64_encode($uri);
     }
@@ -128,6 +131,24 @@ class Shadowrocket
             'peer' => $server['server_name']
         ]);
         $uri = "trojan://{$password}@{$server['host']}:{$server['port']}?{$query}&tfo=1#{$name}";
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildHysteria2($password, $server)
+    {
+        // hysteria2://letmein@example.com/?insecure=1&obfs=salamander&obfs-password=gawrgura&pinSHA256=deadbeef&sni=real.example.com
+        $config = [
+            "sni" => $server['server_name'],
+            "fastopen" => 0
+        ];
+        if (isset($server['obfs_type']) && !empty($server['obfs_type'])) {
+            $config['obfs'] = $server['obfs_type'];
+            $config['obfs-password'] = $server['server_key'];
+        }
+        if ($server['insecure']) $config['insecure'] = $server['insecure'];
+        $query = http_build_query($config);
+        $uri = "hysteria2://{$password}@{$server['host']}:{$server['port']}?{$query}#{$server['name']}";
         $uri .= "\r\n";
         return $uri;
     }

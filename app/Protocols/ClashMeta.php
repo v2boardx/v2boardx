@@ -52,6 +52,10 @@ class ClashMeta
                 array_push($proxy, self::buildVless($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
+            if ($item['type'] === 'hysteria') {
+                array_push($proxy, self::buildHysteria2($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
         }
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
@@ -247,6 +251,24 @@ class ClashMeta
         $array['udp'] = true;
         if (!empty($server['server_name'])) $array['sni'] = $server['server_name'];
         if (!empty($server['allow_insecure'])) $array['skip-cert-verify'] = ($server['allow_insecure'] ? true : false);
+        return $array;
+    }
+
+    public static function buildHysteria2($password, $server)
+    {
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'hysteria2';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+        $array['password'] = $password;
+        $array['udp'] = true;
+        if (!empty($server['server_name'])) $array['sni'] = $server['server_name'];
+        if (!empty($server['insecure'])) $array['skip-cert-verify'] = ($server['insecure'] ? true : false);
+        if (isset($server['obfs_type']) && !empty($server['obfs_type'])) {
+            $array['obfs'] = $server['obfs_type'];
+            $array['obfs-password'] = $server['server_key'];
+        }
         return $array;
     }
 
