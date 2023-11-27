@@ -44,12 +44,12 @@ class ClashMeta
                 array_push($proxy, self::buildVmess($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
-            if ($item['type'] === 'trojan') {
-                array_push($proxy, self::buildTrojan($user['uuid'], $item));
-                array_push($proxies, $item['name']);
-            }
             if ($item['type'] === 'vless') {
                 array_push($proxy, self::buildVless($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'trojan') {
+                array_push($proxy, self::buildTrojan($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'hysteria') {
@@ -178,36 +178,29 @@ class ClashMeta
         $array['uuid'] = $uuid;
         $array['udp'] = true;
 
-        if ($server['tls'] === 1) {
+        if ($server['tls']) {
             $array['tls'] = true;
+
+            if (isset($server['flow']) && !empty($server['flow'])) {
+                $array['flow'] = $server['flow'];
+            }
+            $array['client-fingerprint'] = Helper::getRandomFingerprint();
+
             if ($server['tls_settings']) {
                 $tlsSettings = $server['tls_settings'];
                 if (isset($tlsSettings['allow_insecure']) && !empty($tlsSettings['allow_insecure']))
                     $array['skip-cert-verify'] = ($tlsSettings['allow_insecure'] ? true : false);
+
                 if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
                     $array['servername'] = $tlsSettings['server_name'];
+                // REALITY
+                if ($server['tls'] === 2) {
+                    $array['reality-opts'] = [];
+                    $array['reality-opts']['public-key'] = $tlsSettings['public_key'];
+                    $array['reality-opts']['short-id'] = $tlsSettings['short_id'];
+                }
             }
         }
-
-        if (isset($server['flow']) && $server['flow']) {
-            $array['flow'] = $server['flow'];
-            $array['client-fingerprint'] = 'chrome';
-        }
-
-        if ($server['tls'] === 2) {
-            $array['client-fingerprint'] = 'chrome';
-            $array['tls'] = true;
-            $array['reality-opts'] = [];
-            if ($server['tls_settings']) {
-                $tlsSettings = $server['tls_settings'];
-                if (isset($tlsSettings['allow_insecure']) && !empty($tlsSettings['allow_insecure']))
-                    $array['skip-cert-verify'] = ($tlsSettings['allow_insecure'] ? true : false);
-                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
-                    $array['servername'] = $tlsSettings['server_name'];
-                if (isset($tlsSettings['public_key'])) $array['reality-opts']['public-key'] = $tlsSettings['public_key'];
-            }
-        }
-
         if ($server['network'] === 'tcp') {
             $tcpSettings = $server['network_settings'];
             if (isset($tcpSettings['header']['type'])) $array['network'] = $tcpSettings['header']['type'];
@@ -222,10 +215,6 @@ class ClashMeta
                     $array['ws-opts']['path'] = $wsSettings['path'];
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
                     $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
-                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
-                    $array['ws-path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
-                    $array['ws-headers'] = ['Host' => $wsSettings['headers']['Host']];
             }
         }
         if ($server['network'] === 'grpc') {
