@@ -126,4 +126,10 @@ class Helper
         $encoded = base64_encode($data);
         return str_replace(['+', '/', '='], ['-', '_', ''], $encoded);
     }
+
+    public static function getRandomFingerprint()
+    {
+        $fingerprints = ['chrome', 'firefox', 'safari', 'ios', "android", 'edge', 'qq'];
+        return $fingerprints[rand(0, count($fingerprints) - 1)];
+    }
 }
