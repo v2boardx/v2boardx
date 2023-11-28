@@ -35,6 +35,9 @@ class Shadowrocket
             if ($item['type'] === 'vmess') {
                 $uri .= self::buildVmess($user['uuid'], $item);
             }
+            if ($item['type'] === 'vless') {
+                $uri .= self::buildVless($user['uuid'], $item);
+            }
             if ($item['type'] === 'trojan') {
                 $uri .= self::buildTrojan($user['uuid'], $item);
             }
@@ -120,6 +123,98 @@ class Shadowrocket
         $query = http_build_query($config, '', '&', PHP_QUERY_RFC3986);
         $uri = "vmess://{$userinfo}?{$query}";
         $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildVless($uuid, $server){
+        $host = $server['host'];
+        $port = $server['port'];
+        $name = $server['name'];
+
+        $config = [
+            'tfo' => 0,
+        ];
+
+        if ($server['tls']) {
+            $config['tls'] = 1;
+            if (isset($server['flow']) && !empty($server['flow'])) {
+                switch ($server['flow']) {
+                    case 'xtls-rprx-direct':
+                        $config['xtls'] = 1;
+                        break;
+                    case 'xtls-rprx-vision':
+                        $config['xtls'] = 2;
+                        break;
+                    default:
+                        $config['xtls'] = 0;
+                        break;
+                }
+            }
+
+            if ($server['tls_settings']) {
+                $tlsSettings = $server['tls_settings'];
+                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name'])) {
+                    $config['peer'] = $tlsSettings['server_name'];
+                }
+                // REALITY
+                if ($server['tls'] === 2) {
+                    $config['pbk'] = $tlsSettings['public_key'];
+                    $config['sid'] = $tlsSettings['short_id'];
+                }
+            }
+        }
+
+        if ($server['network'] === 'tcp') {
+            $config['obfs'] = 'none';
+        }
+
+        if ((string)$server['network'] === 'ws') {
+            $config['obfs'] = 'websocket';
+            if ($server['network_settings']) {
+                $wsSettings = $server['network_settings'];
+                if (isset($wsSettings['path']) && !empty($wsSettings['path'])) {
+                    $config['path'] = $wsSettings['path'];
+                }
+                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) {
+                    $config['obfsParam'] = $wsSettings['headers']['Host'];
+                }
+
+            }
+        }
+
+        if ((string)$server['network'] === 'grpc') {
+            $config['obfs'] = 'grpc';
+            if ($server['network_settings']) {
+                $grpcSettings = $server['network_settings'];
+                if (isset($grpcSettings['serviceName']) && !empty($grpcSettings['serviceName'])) {
+                    $config['path'] = $grpcSettings['serviceName'];
+                }
+            }
+
+            if (isset($tlsSettings)) {
+                $config['obfsParam'] = $tlsSettings['serverName'];
+            } else {
+                $config['obfsParam'] = $host;
+            }
+        }
+
+        if ((string)$server['network'] === 'h2') {
+            $config['obfs'] = 'h2';
+            if ($server['network_settings']) {
+                $h2Settings = $server['network_settings'];
+                if (isset($h2Settings['path']) && !empty($h2Settings['path'])) {
+                    $config['path'] = $h2Settings['path'];
+                }
+                if (isset($h2Settings['host']) && !empty($h2Settings['host'])) {
+                    $config['obfsParam'] = array($h2Settings['host']);
+                }
+            }
+        }
+
+        $serverconn = base64_encode("auto:{$uuid}@{$host}:{$port}");
+        $servername = urlencode($name);
+        $query = http_build_query($config);
+        $uri = sprintf("vless://%s?remarks=%s&%s\r\n", $serverconn, $servername, $query);
         return $uri;
     }
 
