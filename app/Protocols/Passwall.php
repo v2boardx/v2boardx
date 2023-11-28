@@ -25,6 +25,9 @@ class Passwall
             if ($item['type'] === 'vmess') {
                 $uri .= self::buildVmess($user['uuid'], $item);
             }
+            if ($item['type'] === 'vless') {
+                $uri .= self::buildVless($user['uuid'], $item);
+            }
             if ($item['type'] === 'shadowsocks') {
                 $uri .= self::buildShadowsocks($user['uuid'], $item);
             }
@@ -86,6 +89,80 @@ class Passwall
             if (isset($grpcSettings['serviceName'])) $config['path'] = $grpcSettings['serviceName'];
         }
         return "vmess://" . base64_encode(json_encode($config)) . "\r\n";
+    }
+
+    public static function buildVless($uuid, $server){
+        $host = $server['host'];
+        $port = $server['port'];
+        $name = $server['name'];
+
+        // https://github.com/XTLS/Xray-core/discussions/716
+        $config = [
+            'type' => $server['network'],
+            'encryption' => 'none',
+        ];
+
+        if ($server['tls']) {
+            if (isset($server['flow']) && !empty($server['flow'])) {
+                $config['flow'] = $server['flow'];
+            }
+            $config['fp'] = Helper::getRandomFingerprint();
+
+            if ($server['tls_settings']) {
+                $config['security'] = 'tls';
+                $tlsSettings = $server['tls_settings'];
+                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name'])) {
+                    $config['sni'] = $tlsSettings['server_name'];
+                }
+                // REALITY
+                if ($server['tls'] === 2) {
+                    $config['security'] = 'reality';
+                    $config['pbk'] = $tlsSettings['public_key'];
+                    $config['sid'] = $tlsSettings['short_id'];
+                }
+            }
+        }
+
+        if ((string)$server['network'] === 'ws') {
+            if ($server['network_settings']) {
+                $wsSettings = $server['network_settings'];
+                if (isset($wsSettings['path']) && !empty($wsSettings['path'])) {
+                    $config['path'] = $wsSettings['path'];
+                }
+                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) {
+                    $config['host'] = $wsSettings['headers']['Host'];
+                }
+
+            }
+        }
+
+        if ((string)$server['network'] === 'grpc') {
+            if ($server['network_settings']) {
+                $grpcSettings = $server['network_settings'];
+                $config['mode'] = 'multi';
+                if (isset($grpcSettings['serviceName']) && !empty($grpcSettings['serviceName'])) {
+                    $config['serviceName'] = $grpcSettings['serviceName'];
+                }
+            }
+        }
+
+        if ((string)$server['network'] === 'h2') {
+            if ($server['network_settings']) {
+                $h2Settings = $server['network_settings'];
+                if (isset($h2Settings['path']) && !empty($h2Settings['path'])) {
+                    $config['path'] = $h2Settings['path'];
+                }
+                if (isset($h2Settings['host']) && !empty($h2Settings['host'])) {
+                    $config['host'] = array($h2Settings['host']);
+                }
+            }
+        }
+
+        $serverconn = "{$uuid}@{$host}:{$port}";
+        $query = http_build_query($config);
+        $servername = urlencode($name);
+        $uri = sprintf("vless://%s?%s#%s\r\n", $serverconn, $query, $servername);
+        return $uri;
     }
 
     public static function buildTrojan($password, $server)

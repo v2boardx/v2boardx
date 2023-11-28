@@ -131,8 +131,9 @@ class HiddifyNext
             if ($server['tls_settings']) {
                 $config['security'] = 'tls';
                 $tlsSettings = $server['tls_settings'];
-                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
+                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name'])) {
                     $config['sni'] = $tlsSettings['server_name'];
+                }
                 // REALITY
                 if ($server['tls'] === 2) {
                     $config['security'] = 'reality';
@@ -145,8 +146,13 @@ class HiddifyNext
         if ((string)$server['network'] === 'ws') {
             if ($server['network_settings']) {
                 $wsSettings = $server['network_settings'];
-                if (isset($wsSettings['path'])) $config['path'] = $wsSettings['path'];
-                if (isset($wsSettings['headers']['Host'])) $config['host'] = $wsSettings['headers']['Host'];
+                if (isset($wsSettings['path']) && !empty($wsSettings['path'])) {
+                    $config['path'] = $wsSettings['path'];
+                }
+                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) {
+                    $config['host'] = $wsSettings['headers']['Host'];
+                }
+
             }
         }
 
@@ -154,15 +160,21 @@ class HiddifyNext
             if ($server['network_settings']) {
                 $grpcSettings = $server['network_settings'];
                 $config['mode'] = 'multi';
-                if (isset($grpcSettings['serviceName'])) $config['serviceName'] = $grpcSettings['serviceName'];
+                if (isset($grpcSettings['serviceName']) && !empty($grpcSettings['serviceName'])) {
+                    $config['serviceName'] = $grpcSettings['serviceName'];
+                }
             }
         }
 
         if ((string)$server['network'] === 'h2') {
             if ($server['network_settings']) {
                 $h2Settings = $server['network_settings'];
-                if (isset($h2Settings['path'])) $config['path'] = $h2Settings['path'];
-                if (isset($h2Settings['host'])) $config['host'] = array($h2Settings['host']);
+                if (isset($h2Settings['path']) && !empty($h2Settings['path'])) {
+                    $config['path'] = $h2Settings['path'];
+                }
+                if (isset($h2Settings['host']) && !empty($h2Settings['host'])) {
+                    $config['host'] = array($h2Settings['host']);
+                }
             }
         }
 
