@@ -257,13 +257,17 @@ class ClashMeta
         return $array;
     }
 
-    private function isMatch($exp, $str)
-    {
-        return @preg_match($exp, $str);
-    }
-
     private function isRegex($exp)
     {
         return @preg_match($exp, null) !== false;
+    }
+
+    private function isMatch($exp, $str)
+    {
+        try {
+            return preg_match($exp, $str);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

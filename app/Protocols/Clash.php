@@ -2,7 +2,6 @@
 
 namespace App\Protocols;
 
-use phpDocumentor\Reflection\Types\Self_;
 use Symfony\Component\Yaml\Yaml;
 
 class Clash
@@ -76,7 +75,6 @@ class Clash
             if ($isFilter) continue;
             $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
-
         $config['proxy-groups'] = array_filter($config['proxy-groups'], function($group) {
             return $group['proxies'];
         });
@@ -92,7 +90,7 @@ class Clash
         return $yaml;
     }
 
-    public static function buildShadowsocks($uuid, $server)
+    public static function buildShadowsocks($password, $server)
     {
         $array = [];
         $array['name'] = $server['name'];
@@ -100,7 +98,7 @@ class Clash
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['cipher'] = $server['cipher'];
-        $array['password'] = $uuid;
+        $array['password'] = $password;
         $array['udp'] = true;
         return $array;
     }
@@ -169,13 +167,17 @@ class Clash
         return $array;
     }
 
-    private function isMatch($exp, $str)
-    {
-        return @preg_match($exp, $str);
-    }
-
     private function isRegex($exp)
     {
         return @preg_match($exp, null) !== false;
+    }
+
+    private function isMatch($exp, $str)
+    {
+        try {
+            return preg_match($exp, $str);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

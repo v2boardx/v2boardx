@@ -23,7 +23,7 @@ class Stash
         $appName = config('v2board.app_name', 'V2Board');
         header("subscription-userinfo: upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
         header('profile-update-interval: 24');
-        header("content-disposition: filename*=UTF-8''".rawurlencode($appName));
+        header("content-disposition:attachment;filename*=UTF-8''".rawurlencode($appName));
         // 暂时使用clash配置文件，后续根据Stash更新情况更新
         $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
         $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
@@ -63,7 +63,7 @@ class Stash
 
         $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
         foreach ($config['proxy-groups'] as $k => $v) {
-            if (!is_array($config['proxy-groups'][$k]['proxies'])) continue;
+            if (!is_array($config['proxy-groups'][$k]['proxies'])) $config['proxy-groups'][$k]['proxies'] = [];
             $isFilter = false;
             foreach ($config['proxy-groups'][$k]['proxies'] as $src) {
                 foreach ($proxies as $dst) {
@@ -94,7 +94,7 @@ class Stash
         return $yaml;
     }
 
-    public static function buildShadowsocks($uuid, $server)
+    public static function buildShadowsocks($password, $server)
     {
         $array = [];
         $array['name'] = $server['name'];
@@ -102,7 +102,7 @@ class Stash
         $array['server'] = $server['host'];
         $array['port'] = $server['port'];
         $array['cipher'] = $server['cipher'];
-        $array['password'] = $uuid;
+        $array['password'] = $password;
         $array['udp'] = true;
         return $array;
     }
@@ -187,11 +187,6 @@ class Stash
             $array['obfs-password'] = $server['server_key'];
         }
         return $array;
-    }
-
-    private function isMatch($exp, $str)
-    {
-        return @preg_match($exp, $str);
     }
 
     private function isRegex($exp)
