@@ -168,6 +168,17 @@ class ClashMeta
                 if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
             }
         }
+        if ($server['network'] === 'h2') {
+            $array['network'] = 'h2';
+            if ($server['networkSettings']) {
+                $h2Settings = $server['networkSettings'];
+                $array['h2-opts'] = [];
+                if (isset($h2Settings['path']) && !empty($h2Settings['path']))
+                    $array['h2-opts']['path'] = $h2Settings['path'];
+                if (isset($h2Settings['host']) && !empty($h2Settings['host']))
+                    $array['h2-opts']['host'] = array($h2Settings['host']);
+            }
+        }
 
         return $array;
     }
@@ -227,6 +238,17 @@ class ClashMeta
                 $grpcSettings = $server['network_settings'];
                 $array['grpc-opts'] = [];
                 if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
+            }
+        }
+        if ($server['network'] === 'h2') {
+            $array['network'] = 'h2';
+            if ($server['network_settings']) {
+                $h2Settings = $server['network_settings'];
+                $array['h2-opts'] = [];
+                if (isset($h2Settings['path']) && !empty($h2Settings['path']))
+                    $array['h2-opts']['path'] = $h2Settings['path'];
+                if (isset($h2Settings['host']) && !empty($h2Settings['host']))
+                    $array['h2-opts']['host'] = array($h2Settings['host']);
             }
         }
 
