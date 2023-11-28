@@ -32,6 +32,14 @@ class ClashMeta
         } else {
             $config = Yaml::parseFile($defaultConfig);
         }
+
+        // global client fingerprint
+        if (array_key_exists('external-controller', $config) && !array_key_exists('global-client-fingerprint', $config)) {
+            $fingerprint = ['global-client-fingerprint' => 'random'];
+            $i = array_search('external-controller', array_keys($config)) + 1;
+            $config = array_merge(array_splice($config,0,$i), $fingerprint, $config);
+        }
+
         $proxy = [];
         $proxies = [];
 
