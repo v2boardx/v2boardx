@@ -51,6 +51,10 @@ class Stash
                 array_push($proxy, self::buildVmess($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
+            if ($item['type'] === 'vless') {
+                array_push($proxy, self::buildVless($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
             if ($item['type'] === 'trojan') {
                 array_push($proxy, self::buildTrojan($user['uuid'], $item));
                 array_push($proxies, $item['name']);
@@ -149,6 +153,67 @@ class Stash
             $array['network'] = 'grpc';
             if ($server['networkSettings']) {
                 $grpcSettings = $server['networkSettings'];
+                $array['grpc-opts'] = [];
+                if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
+            }
+        }
+
+        return $array;
+    }
+
+    public static function buildVless($uuid, $server)
+    {
+        $array = [];
+        $array['name'] = $server['name'];
+        $array['type'] = 'vless';
+        $array['server'] = $server['host'];
+        $array['port'] = $server['port'];
+        $array['uuid'] = $uuid;
+        $array['udp'] = true;
+
+        if ($server['tls']) {
+            $array['tls'] = true;
+
+            if (isset($server['flow']) && !empty($server['flow'])) {
+                $array['flow'] = $server['flow'];
+            }
+            // $array['client-fingerprint'] = Helper::getRandomFingerprint();
+
+            if ($server['tls_settings']) {
+                $tlsSettings = $server['tls_settings'];
+                if (isset($tlsSettings['allow_insecure']) && !empty($tlsSettings['allow_insecure']))
+                    $array['skip-cert-verify'] = ($tlsSettings['allow_insecure'] ? true : false);
+
+                if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
+                    $array['servername'] = $tlsSettings['server_name'];
+                // REALITY
+                // if ($server['tls'] === 2) {
+                //     $array['reality-opts'] = [];
+                //     $array['reality-opts']['public-key'] = $tlsSettings['public_key'];
+                //     $array['reality-opts']['short-id'] = $tlsSettings['short_id'];
+                // }
+            }
+        }
+        if ($server['network'] === 'tcp') {
+            $tcpSettings = $server['network_settings'];
+            if (isset($tcpSettings['header']['type'])) $array['network'] = $tcpSettings['header']['type'];
+            if (isset($tcpSettings['header']['request']['path'][0])) $array['http-opts']['path'] = $tcpSettings['header']['request']['path'][0];
+        }
+        if ($server['network'] === 'ws') {
+            $array['network'] = 'ws';
+            if ($server['network_settings']) {
+                $wsSettings = $server['network_settings'];
+                $array['ws-opts'] = [];
+                if (isset($wsSettings['path']) && !empty($wsSettings['path']))
+                    $array['ws-opts']['path'] = $wsSettings['path'];
+                if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
+                    $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
+            }
+        }
+        if ($server['network'] === 'grpc') {
+            $array['network'] = 'grpc';
+            if ($server['network_settings']) {
+                $grpcSettings = $server['network_settings'];
                 $array['grpc-opts'] = [];
                 if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
             }
