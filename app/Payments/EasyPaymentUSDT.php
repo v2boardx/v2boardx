@@ -66,12 +66,12 @@ class EasyPaymentUSDT {
         reset($params);
         $str = stripslashes(urldecode(http_build_query($params))) . $this->config['epusdt_apitoken'];
         if ($sign !== md5($str)) {
-            die('cannot pass verification');
+            return 'cannot pass verification';
         }
         $status = $params['status'];
         // 1: pending 2: success 3: expired
         if ($status != 2) {
-            die('failed');
+            return 'failed';
         }
         return [
             'trade_no' => $params['order_id'],

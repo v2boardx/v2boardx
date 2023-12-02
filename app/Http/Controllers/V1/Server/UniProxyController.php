@@ -55,7 +55,7 @@ class UniProxyController extends Controller
     // 后端提交数据
     public function push(Request $request)
     {
-        $data = file_get_contents('php://input');
+        $data = request()->getContent() ?: json_encode($_POST);
         $data = json_decode($data, true);
         Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_ONLINE_USER', $this->nodeInfo->id), count($data), 3600);
         Cache::put(CacheKey::get('SERVER_' . strtoupper($this->nodeType) . '_LAST_PUSH_AT', $this->nodeInfo->id), time(), 3600);
