@@ -7,8 +7,10 @@ use Workerman\Worker;
 
 Adapterman::init();
 
+$ncpu = substr_count((string)@file_get_contents('/proc/cpuinfo'), "\nprocessor") + 1;
+
 $http_worker                = new Worker('http://127.0.0.1:8000');
-$http_worker->count         = 2;
+$http_worker->count         = $ncpu * 2;
 $http_worker->name          = 'AdapterMan';
 
 $http_worker->onWorkerStart = static function () {
